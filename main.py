@@ -251,6 +251,11 @@ class tic_tac_toe_board(QWidget):
 		if len(possible_states)==0:
 			return -1
 
+		if len(possible_states)==9:
+			selection = random.choice(possible_state_moves)
+			self.algo_picked_cells.append(selection)
+			return
+
 		best_eval = -1
 		best_move = []
 
