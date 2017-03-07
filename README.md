@@ -1,5 +1,5 @@
 # Tic_Tac_Toe_AI
-Impossible to beat
+Impossible to beat<br><br>
 ![Alt text](https://github.com/bfaure/Tic_Tac_Toe_AI/blob/master/Capture.PNG)
 
 ## Dependencies
