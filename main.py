@@ -236,6 +236,12 @@ class tic_tac_toe_board(QWidget):
 		possible_state_moves = []
 
 		if board==None:
+			global myself
+			global ret_val
+
+			ret_val = -5
+			myself = me
+
 			base_case = True 
 			board = self.cells 
 		else:
@@ -250,7 +256,8 @@ class tic_tac_toe_board(QWidget):
 					possible_state_moves.append([col,row])
 
 		if len(possible_states)==0:
-			return -1
+			if me==myself: return -2
+			else: return -1
 
 		if len(possible_states)==9:
 			selection = random.choice(possible_state_moves)
@@ -273,6 +280,7 @@ class tic_tac_toe_board(QWidget):
 			if best_eval==1010:
 				best_move = random.choice(best_move)
 			else:
+
 				hardest_for_opponent = 1000000
 				hardest_moves = []
 				set_best = False
@@ -280,45 +288,26 @@ class tic_tac_toe_board(QWidget):
 				for option in best_move:
 					state = deepcopy(possible_states[possible_state_moves.index(option)])
 					state[option[0]][option[1]] = me
-					opponent_move = self.get_next_move(board=state,me=opp,opp=me)
-					if opponent_move==-1:
-						best_move = option
-						set_best = True
-						break
-						if not base_case: return -1 
-
-					state[opponent_move[0]][opponent_move[1]] = opp
-					my_next_move = self.get_next_move(board=state,me=me,opp=opp)
-					if my_next_move==-1:
-						if not base_case: return -1
-						else: continue
-
-					state[my_next_move[0]][my_next_move[1]]
-					easiness_for_opponent = self.eval_board(state,me=opp,opp=me)
-					opponent_move = self.get_next_move(board=state,me=opp,opp=me)
-					if opponent_move==-1:
-						best_move = option 
-						set_best = True
-						break
-					state[opponent_move[0]][opponent_move[1]] = opp 
-					my_next_move = self.get_next_move(board=state,me=me,opp=opp)
-					if my_next_move==-1:
+					outcome = self.get_next_move(board=state,me=opp,opp=me)
+					if outcome==-1:
+						hardest_moves.append(option)
+					elif outcome==-2:
+						print("here")
 						continue
-					state[my_next_move[0]][my_next_move[1]] = me 
-					easiness_for_opponent = self.eval_board(board=state,me=opp,opp=me)
-
-					if easiness_for_opponent<hardest_for_opponent:
-						hardest_for_opponent = easiness_for_opponent
-						hardest_moves = []
-						hardest_moves.append(option)
-					elif easiness_for_opponent==hardest_for_opponent:
-						hardest_moves.append(option)
-
-				if not set_best: 
-					if len(hardest_moves)>=1:
-						best_move = random.choice(hardest_moves)
 					else:
-						return -1
+						if ret_val!=-5:
+							if ret_val==-1:
+								hardest_moves.append(option)
+							else:
+								continue
+
+				#print(hardest_moves)
+				if len(hardest_moves)>1:
+					best_move = random.choice(hardest_moves)
+				elif len(hardest_moves)>0:
+					best_move = hardest_moves[0]
+				else:
+					best_move = random.choice(best_move)
 
 		else:
 			best_move = best_move[0]
@@ -333,6 +322,12 @@ class tic_tac_toe_board(QWidget):
 				self.done = True
 				print("STALEMATE")
 		else:
+			if best_eval==1010: # if we won
+				if me==myself:
+					ret_val = -1
+				else:
+					ret_val = -2
+
 			return best_move
 	
 	def algo_won(self):
@@ -367,14 +362,27 @@ class tic_tac_toe_board(QWidget):
 
 		while True:
 			if self.game_over():
+				if self.user_won(): 
+					print("\"O\" WON")
+				elif self.algo_won():
+					print("\"X\" WON")
+				else:
+					print("STALEMATE")
+
 				self.clear()
 				time.sleep(time_between_moves)
-			self.get_next_move()
+			if self.get_next_move()==-1:
+				print("STALEMATE")
+				self.clear()
+				continue
 			self.repaint()
 			time.sleep(time_between_moves)
 			if self.game_over():
 				continue
-			self.get_next_move(me="O",opp="X")
+			if self.get_next_move(me="O",opp="X")==-1:
+				print("STALEMATE")
+				self.clear()
+				continue
 			self.repaint()
 			time.sleep(time_between_moves)
 
