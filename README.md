@@ -1,6 +1,7 @@
 # Tic_Tac_Toe_AI
 Impossible to beat<br><br>
-![Alt text](https://github.com/bfaure/Tic_Tac_Toe_AI/blob/master/Capture.PNG)
+![Alt text](https://github.com/bfaure/Tic_Tac_Toe_AI/blob/master/resources/Capture.PNG) 
+![Alt text](https://github.com/bfaure/Tic_Tac_Toe_AI/blob/master/resources/Capture2.PNG)
 
 ## Dependencies
 Python 2.7, PyQt4
