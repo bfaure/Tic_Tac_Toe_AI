@@ -89,7 +89,8 @@ class tic_tac_toe_board(QWidget):
 		y = e.y()
 		x_cell = x/self.h_step
 		y_cell = y/self.v_step
-		self.shadow = [int(x_cell),int(y_cell)]
+		if x_cell in [0,1,2] and y_cell in [0,1,2]:
+			self.shadow = [int(x_cell),int(y_cell)]
 		self.repaint()
 
 	def clear(self):
