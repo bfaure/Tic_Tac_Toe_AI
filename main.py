@@ -7,6 +7,8 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+import random
+
 pyqt_app = ""
 
 class tic_tac_toe_board(QWidget):
@@ -146,45 +148,68 @@ class tic_tac_toe_board(QWidget):
 			#qp.drawEllipse(location[0]*horizontal_step+shadow_offset,location[1]*vertical_step+shadow_offset,40,40)
 
 	def eval_board(self,board):
-		score = 0
-
 		to_win = [["X","X","N"],["X","N","X"],["N","X","X"]]
 		to_block = [["O","O","N"],["O","N","O"],["N","O","O"]]
 
 		approach_win = [["X","N","."],["X",".","N"],["N",".","X"],["N","X","."],[".","X","N"],[".","N","X"]]
 		block_approach = [["O","N","."],["O",".","N"],["N",".","O"],["N","O","."],[".","O","N"],[".","N","O"]]
 
+		to_win_score = 1010
+		to_block_score = 1000
+
+		approach_win_score = 50
+		block_approach_score = 100
+
+		center_score = 150
+		corner_score = 120
+
+		score = 0
+
 		for col in board:
-			if col in to_win: return 1000
-			if col in to_block: return 1010
-			if col in approach_win: score = 50
-			if col in block_approach: score = 100
+			if col in to_win:
+				if score<to_win_score: score = to_win_score
+			if col in to_block:
+				if score<to_block_score: score = to_block_score
+
+			if col in approach_win: 
+				if score<approach_win_score:
+					score = approach_win_score
+			if col in block_approach: 
+				if score<block_approach_score:
+					score = block_approach_score
 
 		for row in range(3):
 			cur_row = []
 			for col in range(3):
 				cur_row.append(board[col][row])
-			if cur_row in to_win: return 1000
-			if cur_row in to_block: return 1010
+
+			if cur_row in to_win: 
+				if score<to_win_score: score = to_win_score
+			if cur_row in to_block: 
+				if score<to_block_score: score = to_block_score
+
 			if cur_row in approach_win:
-				if score<50: score = 50
+				if score<approach_win_score: score = approach_win_score
 			if cur_row in block_approach:
-				if score<100: score = 100
+				if score<block_approach_score: score = block_approach_score
 
 		if board[1][1] in ["X","N"]:
 			if board[0][0] in ["X","N"] and board[2][2] in ["X","N"]:
-				return 1000
+				if score<to_win_score: score = to_win_score
 			if board[0][2] in ["X","N"] and board[2][0] in ["X","N"]:
-				return 1000
+				if score<to_win_score: score = to_win_score
 
 		if board[1][1] in ["O","N"]:
 			if board[0][0] in ["O","N"] and board[2][2] in ["O","N"]:
-				return 1010
+				if score<to_block_score: score = to_block_score
 			if board[0][2] in ["O","N"] and board[2][0] in ["O","N"]:
-				return 1010
+				if score<to_block_score: score = to_block_score
 
 		if board[1][1] == "N":
-			if score<150: score = 150
+			if score<center_score: score = center_score
+
+		if board[0][0]=="N" or board[0][2]=="N" or board[2][0]=="N" or board[2][2]=="N":
+			if score<corner_score: score = corner_score
 
 		return score
 
@@ -205,13 +230,21 @@ class tic_tac_toe_board(QWidget):
 			return
 
 		best_eval = -1
-		best_move = -1
+		best_move = []
 
 		for scenario,move in zip(possible_states,possible_state_moves):
 			evaluation = self.eval_board(scenario)
 			if evaluation>best_eval:
 				best_eval = evaluation
-				best_move = move 
+				best_move = []
+				best_move.append(move)
+			if evaluation==best_eval:
+				best_move.append(move)
+
+		if len(best_move)>1:
+			best_move = random.choice(best_move)
+		else:
+			best_move = best_move[0]
 
 		if best_move != -1:
 			self.algo_picked_cells.append(best_move)
