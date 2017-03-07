@@ -8,6 +8,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 import random
+import time
 
 pyqt_app = ""
 
@@ -272,7 +273,6 @@ class tic_tac_toe_board(QWidget):
 			if best_eval==1010:
 				best_move = random.choice(best_move)
 			else:
-				#print("here2")
 				hardest_for_opponent = 1000000
 				hardest_moves = []
 				set_best = False
@@ -290,22 +290,19 @@ class tic_tac_toe_board(QWidget):
 					state[opponent_move[0]][opponent_move[1]] = opp
 					my_next_move = self.get_next_move(board=state,me=me,opp=opp)
 					if my_next_move==-1:
-						#print("here")
 						if not base_case: return -1
-						#else: print("here5")
+						else: continue
 
 					state[my_next_move[0]][my_next_move[1]]
 					easiness_for_opponent = self.eval_board(state,me=opp,opp=me)
 					opponent_move = self.get_next_move(board=state,me=opp,opp=me)
 					if opponent_move==-1:
-						#print("here2")
 						best_move = option 
 						set_best = True
 						break
 					state[opponent_move[0]][opponent_move[1]] = opp 
 					my_next_move = self.get_next_move(board=state,me=me,opp=opp)
 					if my_next_move==-1:
-						#print("here3")
 						continue
 					state[my_next_move[0]][my_next_move[1]] = me 
 					easiness_for_opponent = self.eval_board(board=state,me=opp,opp=me)
@@ -328,7 +325,10 @@ class tic_tac_toe_board(QWidget):
 
 		if base_case:
 			if best_move != -1:
-				self.algo_picked_cells.append(best_move)
+				if me=="X":
+					self.algo_picked_cells.append(best_move)
+				else:
+					self.clicked_cells.append(best_move)
 			else:
 				self.done = True
 				print("STALEMATE")
@@ -360,6 +360,23 @@ class tic_tac_toe_board(QWidget):
 		self.first_move = "USER"
 		self.clear()
 
+	def play_yourself(self):
+		time_between_moves = 0.25
+		self.first_move = "USER"
+		self.clear()
+
+		while True:
+			if self.game_over():
+				self.clear()
+				time.sleep(time_between_moves)
+			self.get_next_move()
+			self.repaint()
+			time.sleep(time_between_moves)
+			if self.game_over():
+				continue
+			self.get_next_move(me="O",opp="X")
+			self.repaint()
+			time.sleep(time_between_moves)
 
 class main_window(QWidget):
 
@@ -388,6 +405,8 @@ class main_window(QWidget):
         self.game_menu = self.menu_bar.addMenu("Game")
         self.game_menu.addAction("AI Goes First",self.grid.ai_first)
         self.game_menu.addAction("You Go First",self.grid.user_first)
+        self.game_menu.addSeparator()
+        self.game_menu.addAction("AI Plays Itself",self.grid.play_yourself)
         self.game_menu.addSeparator()
         self.game_menu.addAction("Clear",self.grid.clear)
 
