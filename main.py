@@ -153,7 +153,16 @@ class tic_tac_toe_board(QWidget):
 			qp.drawLine(location[0]*horizontal_step+x_offset,location[1]*vertical_step+x_offset,location[0]*horizontal_step+horizontal_step-x_offset,location[1]*vertical_step+vertical_step-x_offset)
 			qp.drawLine(location[0]*horizontal_step+x_offset,location[1]*vertical_step+x_offset+53,location[0]*horizontal_step+horizontal_step-x_offset,location[1]*vertical_step+vertical_step-x_offset-53)
 
+	def board_complete(self,board):
+		for col in range(3):
+			for row in range(3):
+				if board[row][col]==".":
+					return False
+		return True
+
 	def eval_board(self,board,me="X",opp="O"):
+
+		if self.board_complete(board): return -1
 
 		to_win = [[me,me,"N"],[me,"N",me],["N",me,me]]
 		to_block = [[opp,opp,"N"],[opp,"N",opp],["N",opp,opp]]
@@ -220,21 +229,27 @@ class tic_tac_toe_board(QWidget):
 
 		return score
 
-	def get_next_move(self):
+	def get_next_move(self,board=None,me="X",opp="O"):
 
 		possible_states = []
 		possible_state_moves = []
 
+		if board==None:
+			base_case = True 
+			board = self.cells 
+		else:
+			base_case = False
+
 		for row in range(3):
 			for col in range(3):
-				if self.cells[col][row]==".":
-					state_copy = deepcopy(self.cells)
+				if board[col][row]==".":
+					state_copy = deepcopy(board)
 					state_copy[col][row] = "N"
 					possible_states.append(state_copy)
 					possible_state_moves.append([col,row])
 
 		if len(possible_states)==0:
-			return
+			return -1
 
 		best_eval = -1
 		best_move = []
@@ -245,39 +260,75 @@ class tic_tac_toe_board(QWidget):
 				best_eval = evaluation
 				best_move = []
 				best_move.append(move)
-			if evaluation==best_eval:
+			elif evaluation==best_eval:
 				best_move.append(move)
 
 		if len(best_move)>1:
 			if best_eval==1010:
 				best_move = random.choice(best_move)
 			else:
-				me = "X"
-				opponent = "O"
-
+				#print("here2")
 				hardest_for_opponent = 1000000
-				hardest_move = [-1,-1]
+				hardest_moves = []
+				set_best = False
 
 				for option in best_move:
 					state = deepcopy(possible_states[possible_state_moves.index(option)])
 					state[option[0]][option[1]] = me
-					easiness_for_opponent = self.eval_board(state,me=opponent,opp=me)
+					opponent_move = self.get_next_move(board=state,me=opp,opp=me)
+					if opponent_move==-1:
+						best_move = option
+						set_best = True
+						break
+						if not base_case: return -1 
+
+					state[opponent_move[0]][opponent_move[1]] = opp
+					my_next_move = self.get_next_move(board=state,me=me,opp=opp)
+					if my_next_move==-1:
+						#print("here")
+						if not base_case: return -1
+						#else: print("here5")
+
+					state[my_next_move[0]][my_next_move[1]]
+					easiness_for_opponent = self.eval_board(state,me=opp,opp=me)
+					opponent_move = self.get_next_move(board=state,me=opp,opp=me)
+					if opponent_move==-1:
+						#print("here2")
+						best_move = option 
+						set_best = True
+						break
+					state[opponent_move[0]][opponent_move[1]] = opp 
+					my_next_move = self.get_next_move(board=state,me=me,opp=opp)
+					if my_next_move==-1:
+						#print("here3")
+						continue
+					state[my_next_move[0]][my_next_move[1]] = me 
+					easiness_for_opponent = self.eval_board(board=state,me=opp,opp=me)
+
 					if easiness_for_opponent<hardest_for_opponent:
 						hardest_for_opponent = easiness_for_opponent
-						hardest_move = option
+						hardest_moves = []
+						hardest_moves.append(option)
+					elif easiness_for_opponent==hardest_for_opponent:
+						hardest_moves.append(option)
 
-				if hardest_move != [-1,-1]:
-					best_move = hardest_move
-				else:
-					print("ERROR: get_next_move()")
+				if not set_best: 
+					if len(hardest_moves)>=1:
+						best_move = random.choice(hardest_moves)
+					else:
+						return -1
+
 		else:
 			best_move = best_move[0]
 
-		if best_move != -1:
-			self.algo_picked_cells.append(best_move)
+		if base_case:
+			if best_move != -1:
+				self.algo_picked_cells.append(best_move)
+			else:
+				self.done = True
+				print("STALEMATE")
 		else:
-			self.done = True
-			print("STALEMATE")
+			return best_move
 	
 	def algo_won(self):
 		for col in self.cells:
