@@ -21,6 +21,7 @@ class tic_tac_toe_board(QWidget):
 		self.clicked_cells = []
 		self.algo_picked_cells = []
 		self.over = False
+		self.first_move = "USER"
 
 		self.setMouseTracking(True)
 
@@ -99,6 +100,11 @@ class tic_tac_toe_board(QWidget):
 			for column in range(3):
 				self.cells[column][row] = "."
 		self.repaint()
+		if self.first_move=="ALGO":
+			self.setEnabled(False)
+			self.get_next_move()
+			self.repaint()
+			self.setEnabled(True)
 
 	def paintEvent(self,e):
 		qp = QPainter()
@@ -145,14 +151,14 @@ class tic_tac_toe_board(QWidget):
 			self.cells[location[0]][location[1]] = "X"
 			qp.drawLine(location[0]*horizontal_step+x_offset,location[1]*vertical_step+x_offset,location[0]*horizontal_step+horizontal_step-x_offset,location[1]*vertical_step+vertical_step-x_offset)
 			qp.drawLine(location[0]*horizontal_step+x_offset,location[1]*vertical_step+x_offset+53,location[0]*horizontal_step+horizontal_step-x_offset,location[1]*vertical_step+vertical_step-x_offset-53)
-			#qp.drawEllipse(location[0]*horizontal_step+shadow_offset,location[1]*vertical_step+shadow_offset,40,40)
 
-	def eval_board(self,board):
-		to_win = [["X","X","N"],["X","N","X"],["N","X","X"]]
-		to_block = [["O","O","N"],["O","N","O"],["N","O","O"]]
+	def eval_board(self,board,me="X",opp="O"):
 
-		approach_win = [["X","N","."],["X",".","N"],["N",".","X"],["N","X","."],[".","X","N"],[".","N","X"]]
-		block_approach = [["O","N","."],["O",".","N"],["N",".","O"],["N","O","."],[".","O","N"],[".","N","O"]]
+		to_win = [[me,me,"N"],[me,"N",me],["N",me,me]]
+		to_block = [[opp,opp,"N"],[opp,"N",opp],["N",opp,opp]]
+
+		approach_win = [[me,"N","."],[me,".","N"],["N",".",me],["N",me,"."],[".",me,"N"],[".","N",me]]
+		block_approach = [[opp,"N","."],[opp,".","N"],["N",".",opp],["N",opp,"."],[".",opp,"N"],[".","N",opp]]
 
 		to_win_score = 1010
 		to_block_score = 1000
@@ -193,16 +199,16 @@ class tic_tac_toe_board(QWidget):
 			if cur_row in block_approach:
 				if score<block_approach_score: score = block_approach_score
 
-		if board[1][1] in ["X","N"]:
-			if board[0][0] in ["X","N"] and board[2][2] in ["X","N"]:
+		if board[1][1] in [me,"N"]:
+			if board[0][0] in [me,"N"] and board[2][2] in [me,"N"]:
 				if score<to_win_score: score = to_win_score
-			if board[0][2] in ["X","N"] and board[2][0] in ["X","N"]:
+			if board[0][2] in [me,"N"] and board[2][0] in [me,"N"]:
 				if score<to_win_score: score = to_win_score
 
-		if board[1][1] in ["O","N"]:
-			if board[0][0] in ["O","N"] and board[2][2] in ["O","N"]:
+		if board[1][1] in [opp,"N"]:
+			if board[0][0] in [opp,"N"] and board[2][2] in [opp,"N"]:
 				if score<to_block_score: score = to_block_score
-			if board[0][2] in ["O","N"] and board[2][0] in ["O","N"]:
+			if board[0][2] in [opp,"N"] and board[2][0] in [opp,"N"]:
 				if score<to_block_score: score = to_block_score
 
 		if board[1][1] == "N":
@@ -242,7 +248,27 @@ class tic_tac_toe_board(QWidget):
 				best_move.append(move)
 
 		if len(best_move)>1:
-			best_move = random.choice(best_move)
+			if best_eval==1010:
+				best_move = random.choice(best_move)
+			else:
+				me = "X"
+				opponent = "O"
+
+				hardest_for_opponent = 1000000
+				hardest_move = [-1,-1]
+
+				for option in best_move:
+					state = deepcopy(possible_states[possible_state_moves.index(option)])
+					state[option[0]][option[1]] = me
+					easiness_for_opponent = self.eval_board(state,me=opponent,opp=me)
+					if easiness_for_opponent<hardest_for_opponent:
+						hardest_for_opponent = easiness_for_opponent
+						hardest_move = option
+
+				if hardest_move != [-1,-1]:
+					best_move = hardest_move
+				else:
+					print("ERROR: get_next_move()")
 		else:
 			best_move = best_move[0]
 
@@ -269,6 +295,15 @@ class tic_tac_toe_board(QWidget):
 				return True
 		return False
 
+	def ai_first(self):
+		self.first_move = "ALGO"
+		self.clear()
+
+	def user_first(self):
+		self.first_move = "USER"
+		self.clear()
+
+
 class main_window(QWidget):
 
     def __init__(self,parent=None):
@@ -281,14 +316,24 @@ class main_window(QWidget):
 
     def init_ui(self):
         self.setFixedWidth(300)
-        self.setFixedHeight(325)
+        self.setFixedHeight(350)
         self.setWindowTitle("Tic-Tac-Toe Trainer")
         self.layout = QVBoxLayout(self)
+        if os.name=="nt": self.layout.addSpacing(25)
         self.grid = tic_tac_toe_board()
         self.layout.addWidget(self.grid)
         self.button = QPushButton("Reset")
         self.button.clicked.connect(self.grid.clear)
         self.layout.addWidget(self.button)
+
+        self.menu_bar = QMenuBar(self)
+        self.menu_bar.setFixedWidth(300)
+        self.game_menu = self.menu_bar.addMenu("Game")
+        self.game_menu.addAction("AI Goes First",self.grid.ai_first)
+        self.game_menu.addAction("You Go First",self.grid.user_first)
+        self.game_menu.addSeparator()
+        self.game_menu.addAction("Clear",self.grid.clear)
+
         self.show()
 
 
